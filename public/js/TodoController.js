@@ -3,51 +3,41 @@
  * Created by Oleg on 14.06.2016.
  */
 
-/**
- * Created by Oleg on 14.06.2016.
- */
 app.controller('TodoController', function ($auth, $state, $http, $rootScope,$scope) {
 
-    $scope.email = '';
-    $scope.password = '';
-    $scope.newUser = {};
-    $scope.loginError = false;
-    $scope.loginErrorText = '';
+    $scope.todos = [];
+    $scope.newTodo = {};
+    
+    $scope.init = function () {
 
-    $scope.login = function () {
+        $http.get('/api/todo').success(function (data) {
+            $scope.todos = data;
+        })
+    };
 
-        var credentials = {
-            email: $scope.email,
-            password: $scope.password
-        };
+    $scope.save = function () {
+        $http.post('/api/todo',$scope.newTodo).success(function (data) {
+            $scope.todos.push(data);
+            $scope.newTodo = {};
+        })
+    };
 
-        $auth.login(credentials).then(function () {
+    $scope.update = function (index) {
+      $http.put('/api/todo/'+$scope.todos[index].id, $scope.todos[index]);
+    };
 
-            return $http.get('api/authenticate/user');
-
-        }, function (error) {
-            $scope.loginError = true;
-            $scope.loginErrorText = error.data.error;
-
-        }).then(function (response) {
-            $rootScope.currentUser = response.data.user;
-            $scope.loginError = false;
-            $scope.loginErrorText = '';
-
-            $state.go('todo');
+    $scope.delete = function (index) {
+        $http.delete('/api/todo/'+$scope.todos[index].id).success(function () {
+            $scope.todos.splice(index, 1);
         });
     };
 
-    $scope.register = function () {
+    $scope.logout = function() {
+        $auth.logout().then(function() {
+            $rootScope.currentUser = null;
+        });
+    }
 
-        $http.post('/api/register',$scope.newUser)
-            .success(function(data){
-                $scope.email=$scope.newUser.email;
-                $scope.password=$scope.newUser.password;
-                $scope.login();
-            })
-
-    };
-
+    $scope.init();
 
 });
